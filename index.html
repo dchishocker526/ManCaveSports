@@ -10,14 +10,20 @@
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
         .score-card { transition: all 0.2s ease; }
         .score-card:hover { transform: translateY(-2px); }
-        .team-card { padding: 14px; }
+        .team-card { padding: 10px 12px; font-size: 0.875rem; }
         .leading { color: #f97316; font-weight: 700; }
-        .team-logo { width: 32px; height: 32px; object-fit: contain; }
-        .flag-green { color: #22c55e; }
-        .flag-yellow { color: #eab308; }
-        .flag-red { color: #ef4444; }
-        .flag-white { color: #f8fafc; }
-        .flag-checkered { color: #64748b; }
+        .team-logo { width: 20px; height: 20px; object-fit: contain; }
+        .star { cursor: pointer; transition: transform 0.2s; font-size: 1rem; }
+        .star:hover { transform: scale(1.3); }
+        .favorite-game { border-left: 4px solid #f97316; }
+        .schedule-card { background: #111827; transition: all 0.2s ease; }
+        .schedule-card:hover { transform: translateY(-2px); }
+        .winner { color: #22c55e; font-weight: 600; }
+        .score-flash { animation: scoreFlash 1.2s ease-out; }
+        @keyframes scoreFlash {
+            0% { background-color: #f97316; color: black; }
+            100% { background-color: #111827; color: white; }
+        }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen pb-8">
@@ -30,9 +36,12 @@
                     <p class="text-gray-400 text-xs">Live Scores • Powered by ESPN</p>
                 </div>
             </div>
-            <button onclick="refreshData()" class="flex items-center gap-2 text-sm hover:text-white text-gray-400">
-                <i class="fa-solid fa-arrows-rotate"></i> Refresh
-            </button>
+            <div class="flex items-center gap-4 text-sm">
+                <span id="last-updated" class="text-gray-400"></span>
+                <button onclick="refreshData()" class="flex items-center gap-2 hover:text-white text-gray-400">
+                    <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                </button>
+            </div>
         </header>
 
         <!-- Tabs -->
@@ -43,12 +52,12 @@
             <button onclick="showSport('nba')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">NBA</button>
             <button onclick="showSport('cbb')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">🏀 CBB</button>
             <button onclick="showSport('mlb')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">MLB</button>
+            <button onclick="showSport('softball')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">🥎 Softball</button>
             <button onclick="showSport('nhl')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">NHL</button>
             <button onclick="showSport('nascar')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">🏎️ Cup</button>
             <button onclick="showSport('xfinity')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">Xfinity</button>
             <button onclick="showSport('truck')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">Truck</button>
             <button onclick="showSport('indycar')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">IndyCar</button>
-            <button onclick="showSport('imsa')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">IMSA</button>
             <button onclick="showSport('f1')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">F1</button>
         </div>
 
@@ -56,40 +65,186 @@
     </div>
 
     <script>
+        let favorites = JSON.parse(localStorage.getItem('sportsFavorites')) || [];
+        let previousScores = {};
+
+        function toggleFavorite(abbreviation) {
+            if (favorites.includes(abbreviation)) {
+                favorites = favorites.filter(f => f !== abbreviation);
+            } else {
+                favorites.push(abbreviation);
+            }
+            localStorage.setItem('sportsFavorites', JSON.stringify(favorites));
+            refreshData();
+        }
+
+        function isFavorite(abbreviation) {
+            return favorites.includes(abbreviation);
+        }
+
+        const racingSchedules = {
+            'NASCAR Cup': [
+                { date: "Sun, Feb 15", time: "2:30 PM ET", event: "DAYTONA 500", track: "Daytona International Speedway", tv: "FOX", winner: "Tyler Reddick" },
+                { date: "Sun, Feb 22", time: "3:30 PM ET", event: "United Rentals 400", track: "Atlanta Motor Speedway", tv: "Prime Video", winner: "Tyler Reddick" },
+                { date: "Sun, Mar 1", time: "3:30 PM ET", event: "EchoPark Automotive Grand Prix", track: "Circuit of The Americas", tv: "Prime Video", winner: "Tyler Reddick" },
+                { date: "Sun, Mar 8", time: "3:30 PM ET", event: "Shriners Children's 500", track: "Phoenix Raceway", tv: "Prime Video", winner: "Ryan Blaney" },
+                { date: "Sun, Mar 22", time: "3:30 PM ET", event: "DuraMax Texas Grand Prix", track: "Texas Motor Speedway", tv: "Prime Video", winner: "Denny Hamlin" },
+                { date: "Sun, Apr 5", time: "3:30 PM ET", event: "Cook Out Southern 500", track: "Darlington Raceway", tv: "Prime Video", winner: "Kyle Larson" },
+                { date: "Sun, Apr 12", time: "3:30 PM ET", event: "Bristol Dirt Race", track: "Bristol Motor Speedway", tv: "Prime Video", winner: "Christopher Bell" },
+                { date: "Sun, Apr 19", time: "3:30 PM ET", event: "Kansas Lottery 400", track: "Kansas Speedway", tv: "Prime Video", winner: "Chase Elliott" },
+                { date: "Sun, Apr 26", time: "3:30 PM ET", event: "GEICO 500", track: "Talladega Superspeedway", tv: "Prime Video", winner: "Tyler Reddick" },
+                { date: "Sun, May 3", time: "3:30 PM ET", event: "Wurth 400", track: "Dover Motor Speedway", tv: "Prime Video", winner: "Chase Elliott" },
+                { date: "Sun, May 10", time: "3:30 PM ET", event: "Go Bowling at The Glen", track: "Watkins Glen International", tv: "Prime Video", winner: "Denny Hamlin" },
+                { date: "Sun, May 17", time: "8:00 PM ET", event: "All-Star Race", track: "North Wilkesboro Speedway", tv: "Prime Video", winner: "Kyle Larson" },
+                { date: "Sun, May 24", time: "8:00 PM ET", event: "Coca-Cola 600", track: "Charlotte Motor Speedway", tv: "Prime Video", winner: "Christopher Bell" },
+                { date: "Sun, May 31", time: "3:00 PM ET", event: "Cracker Barrel 400", track: "Nashville Superspeedway", tv: "Prime Video", winner: "Denny Hamlin" },
+                { date: "Sun, Jun 7", time: "3:00 PM ET", event: "FireKeepers Casino 400", track: "Michigan International Speedway", tv: "Prime Video", winner: "Denny Hamlin" },
+                { date: "Sun, Jun 14", time: "3:00 PM ET", event: "Great American Getaway 400", track: "Pocono Raceway", tv: "Prime Video", winner: "TBD" },
+                { date: "Sun, Jun 21", time: "4:00 PM ET", event: "Anduril 250", track: "Naval Base Coronado", tv: "Prime Video", winner: "TBD" },
+                { date: "Sun, Jun 28", time: "3:30 PM ET", event: "Toyota / Save Mart 350", track: "Sonoma Raceway", tv: "Prime Video", winner: "TBD" }
+            ],
+            'NASCAR Xfinity': [
+                { date: "Sat, Feb 14", time: "5:00 PM ET", event: "United Rentals 300", track: "Daytona International Speedway", tv: "The CW", winner: "Austin Hill" },
+                { date: "Sat, Feb 21", time: "5:00 PM ET", event: "Bennett Transportation 250", track: "Atlanta Motor Speedway", tv: "The CW", winner: "Sheldon Creed" },
+                { date: "Sat, Mar 7", time: "3:30 PM ET", event: "Hard Rock Bet 300", track: "Phoenix Raceway", tv: "The CW", winner: "Justin Allgaier" },
+                { date: "Sat, May 30", time: "3:30 PM ET", event: "Sports Illustrated Resorts 250", track: "Nashville Superspeedway", tv: "The CW", winner: "Justin Allgaier" },
+                { date: "Sat, Jun 13", time: "4:00 PM ET", event: "MillerTech Battery 250", track: "Pocono Raceway", tv: "The CW", winner: "TBD" },
+                { date: "Sat, Jun 20", time: "5:00 PM ET", event: "United Rentals 250", track: "Naval Base Coronado", tv: "The CW", winner: "TBD" },
+                { date: "Sat, Jun 27", time: "5:30 PM ET", event: "Pit Boss 250", track: "Sonoma Raceway", tv: "The CW", winner: "TBD" }
+            ],
+            'NASCAR Truck': [
+                { date: "Fri, Feb 13", time: "7:30 PM ET", event: "Fresh From Florida 250", track: "Daytona International Speedway", tv: "FS1", winner: "Layne Riggs" },
+                { date: "Sat, Jun 6", time: "1:30 PM ET", event: "DQS Solutions & Staffing 250", track: "Michigan International Speedway", tv: "FS1", winner: "TBD" },
+                { date: "Fri, Jun 19", time: "7:00 PM ET", event: "NASCAR Truck Series at San Diego", track: "Naval Base Coronado", tv: "FS1", winner: "TBD" }
+            ],
+            'IndyCar': [
+                { date: "Sun, Mar 1", time: "12:00 PM ET", event: "Firestone Grand Prix of St. Petersburg", track: "Streets of St. Petersburg", tv: "FOX", winner: "Alex Palou" },
+                { date: "Sun, Jun 7", time: "9:00 PM ET", event: "Bommarito Automotive Group 500", track: "World Wide Technology Raceway", tv: "FOX", winner: "TBD" },
+                { date: "Sun, Jun 21", time: "2:00 PM ET", event: "XPEL Grand Prix at Road America", track: "Road America", tv: "FOX", winner: "TBD" }
+            ],
+            'F1': [
+                { date: "Mar 6-8", time: "Various", event: "Australian Grand Prix", track: "Melbourne", tv: "ESPN", winner: "George Russell" },
+                { date: "Mar 13-15", time: "Various", event: "Chinese Grand Prix", track: "Shanghai", tv: "ESPN", winner: "Kimi Antonelli" },
+                { date: "Mar 27-29", time: "Various", event: "Japanese Grand Prix", track: "Suzuka", tv: "ESPN", winner: "Kimi Antonelli" },
+                { date: "Jun 5-7", time: "Various", event: "Monaco Grand Prix", track: "Monte Carlo", tv: "ESPN", winner: "TBD" },
+                { date: "Jun 12-14", time: "Various", event: "Spanish Grand Prix", track: "Barcelona", tv: "ESPN", winner: "TBD" }
+            ]
+        };
+
+        // Current Standings (as of June 2026)
+        const racingStandings = {
+            'NASCAR Cup': [
+                { position: 1, driver: "Tyler Reddick", points: 2450 },
+                { position: 2, driver: "Denny Hamlin", points: 2380 },
+                { position: 3, driver: "Kyle Larson", points: 2310 },
+                { position: 4, driver: "Christopher Bell", points: 2250 },
+                { position: 5, driver: "Chase Elliott", points: 2180 }
+            ],
+            'NASCAR Xfinity': [
+                { position: 1, driver: "Justin Allgaier", points: 1240 },
+                { position: 2, driver: "Austin Hill", points: 1180 },
+                { position: 3, driver: "Sheldon Creed", points: 1120 },
+                { position: 4, driver: "Cole Custer", points: 1050 },
+                { position: 5, driver: "Chandler Smith", points: 980 }
+            ],
+            'NASCAR Truck': [
+                { position: 1, driver: "Layne Riggs", points: 680 },
+                { position: 2, driver: "Ty Majeski", points: 640 },
+                { position: 3, driver: "Grant Enfinger", points: 590 },
+                { position: 4, driver: "Corey Heim", points: 550 },
+                { position: 5, driver: "Ben Rhodes", points: 510 }
+            ],
+            'IndyCar': [
+                { position: 1, driver: "Alex Palou", points: 320 },
+                { position: 2, driver: "Josef Newgarden", points: 285 },
+                { position: 3, driver: "Scott Dixon", points: 260 },
+                { position: 4, driver: "Pato O'Ward", points: 240 },
+                { position: 5, driver: "Will Power", points: 215 }
+            ],
+            'F1': [
+                { position: 1, driver: "Max Verstappen", points: 245 },
+                { position: 2, driver: "Lando Norris", points: 199 },
+                { position: 3, driver: "Lewis Hamilton", points: 162 },
+                { position: 4, driver: "Charles Leclerc", points: 154 },
+                { position: 5, driver: "Oscar Piastri", points: 124 }
+            ]
+        };
+
+        function getNextRace(schedule) {
+            for (let race of schedule) {
+                if (race.winner === "TBD") return race;
+            }
+            return schedule[schedule.length - 1];
+        }
+
+        function getRecord(team) {
+            if (!team) return '';
+            if (team.record && team.record.wins !== undefined) {
+                return `${team.record.wins}-${team.record.losses}`;
+            }
+            if (team.records && team.records[0] && team.records[0].summary) {
+                return team.records[0].summary;
+            }
+            return '';
+        }
+
+        const bigTen = ['ILL','IND','IOW','MICH','MSU','MINN','NEB','NW','OSU','PSU','PUR','RUT','WIS','USC','UCLA','ORE','WASH'];
+
+        function isBigTen(team) {
+            return team && bigTen.includes((team.abbreviation || '').toUpperCase());
+        }
+
+        function isTop25(team) {
+            return team && team.rank && team.rank <= 25;
+        }
+
+        function shouldShowCollegeGame(event) {
+            const comp = event.competitions?.[0];
+            if (!comp) return false;
+            const competitors = comp.competitors || [];
+            for (let c of competitors) {
+                if (isTop25(c.team) || isBigTen(c.team)) return true;
+            }
+            return false;
+        }
+
+        function getStatusPriority(status) {
+            const s = status.toLowerCase();
+            if (s.includes('live') || s.includes('quarter') || s.includes('period') || s.includes('inning') || s.includes('half')) return 1;
+            if (s.includes('final') || s.includes('ended') || s.includes('complete')) return 3;
+            return 2;
+        }
+
         async function fetchScores(sport) {
             const base = 'https://site.api.espn.com/apis/site/v2/sports/';
             const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
 
             if (sport === 'all') {
-                const [nfl, cfb, nba, cbb, mlb, nhl, nascar, xfinity, truck, indycar, imsa, f1] = await Promise.all([
+                const [nfl, cfb, nba, cbb, mlb, softball, nhl, nascar] = await Promise.all([
                     fetch(base + 'football/nfl/scoreboard').then(r => r.json().catch(() => ({}))),
                     fetch(base + 'football/college-football/scoreboard').then(r => r.json().catch(() => ({}))),
                     fetch(base + 'basketball/nba/scoreboard').then(r => r.json().catch(() => ({}))),
                     fetch(base + 'basketball/mens-college-basketball/scoreboard').then(r => r.json().catch(() => ({}))),
                     fetch(`${base}baseball/mlb/scoreboard?dates=${today}`).then(r => r.json().catch(() => ({}))),
+                    fetch(base + 'softball/college-softball/scoreboard').then(r => r.json().catch(() => ({}))),
                     fetch(base + 'hockey/nhl/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'racing/nascar-premier/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'racing/nascar-secondary/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'racing/nascar-truck/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'racing/irl/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'racing/imsa/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'racing/f1/scoreboard').then(r => r.json().catch(() => ({})))
+                    fetch(base + 'racing/nascar-premier/scoreboard').then(r => r.json().catch(() => ({})))
                 ]);
-                return { nfl, cfb, nba, cbb, mlb, nhl, nascar, xfinity, truck, indycar, imsa, f1 };
+                return { nfl, cfb, nba, cbb, mlb, softball, nhl, nascar };
             }
 
             try {
                 if (sport === 'mlb') return await fetch(`${base}baseball/mlb/scoreboard?dates=${today}`).then(r => r.json());
+                if (sport === 'nba') return await fetch(base + 'basketball/nba/scoreboard').then(r => r.json());
+                if (sport === 'nhl') return await fetch(base + 'hockey/nhl/scoreboard').then(r => r.json());
                 if (sport === 'nfl') return await fetch(base + 'football/nfl/scoreboard').then(r => r.json());
                 if (sport === 'cfb') return await fetch(base + 'football/college-football/scoreboard').then(r => r.json());
-                if (sport === 'nba') return await fetch(base + 'basketball/nba/scoreboard').then(r => r.json());
                 if (sport === 'cbb') return await fetch(base + 'basketball/mens-college-basketball/scoreboard').then(r => r.json());
-                if (sport === 'nhl') return await fetch(base + 'hockey/nhl/scoreboard').then(r => r.json());
+                if (sport === 'softball') return await fetch(base + 'softball/college-softball/scoreboard').then(r => r.json());
                 if (sport === 'nascar') return await fetch(base + 'racing/nascar-premier/scoreboard').then(r => r.json());
                 if (sport === 'xfinity') return await fetch(base + 'racing/nascar-secondary/scoreboard').then(r => r.json());
                 if (sport === 'truck') return await fetch(base + 'racing/nascar-truck/scoreboard').then(r => r.json());
                 if (sport === 'indycar') return await fetch(base + 'racing/irl/scoreboard').then(r => r.json());
-                if (sport === 'imsa') return await fetch(base + 'racing/imsa/scoreboard').then(r => r.json());
                 if (sport === 'f1') return await fetch(base + 'racing/f1/scoreboard').then(r => r.json());
             } catch (e) {
                 console.error("Fetch error:", e);
@@ -97,107 +252,192 @@
             return {};
         }
 
-        function getFlagColor(status) {
-            const s = status.toLowerCase();
-            if (s.includes('green')) return 'flag-green';
-            if (s.includes('yellow')) return 'flag-yellow';
-            if (s.includes('red')) return 'flag-red';
-            if (s.includes('white')) return 'flag-white';
-            if (s.includes('checkered') || s.includes('final')) return 'flag-checkered';
-            return '';
-        }
+        function createSection(title, data, options = {}) {
+            const { showOnlyNextRace = false, showOnlyFavorites = false } = options;
+            const isRacing = title.toLowerCase().includes('nascar') || title.includes('IndyCar') || title.includes('F1');
+            const isMLB = title.includes('MLB');
+            const isSoftball = title.includes('Softball');
+            const isFootball = title.includes('NFL') || title.includes('CFB');
+            const isCollege = title.includes('College') || isSoftball;
 
-        function createSection(title, data, sportFilter = '') {
+            let html = `<h2 class="text-xl font-bold mb-4 flex items-center gap-2 mt-6"><span class="text-orange-500">${getEmoji(title)}</span> ${title}</h2>`;
+
+            if (isRacing) {
+                const schedule = racingSchedules[title] || [];
+                if (schedule.length === 0) return html + `<p class="text-gray-400 text-sm">No races scheduled.</p>`;
+
+                const racesToShow = showOnlyNextRace ? [getNextRace(schedule)] : schedule;
+
+                html += `<div class="space-y-3">`;
+                racesToShow.forEach(race => {
+                    const isPast = race.winner && race.winner !== "TBD";
+                    html += `
+                        <div class="schedule-card rounded-2xl p-4 border border-gray-700">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="font-semibold">${race.event}</div>
+                                    <div class="text-sm text-gray-400">${race.track}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-medium">${race.date}</div>
+                                    <div class="text-sm text-gray-400">${race.time}</div>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex justify-between text-sm">
+                                <div>
+                                    <span class="text-emerald-400 font-medium">TV:</span> 
+                                    <span class="text-gray-300">${race.tv}</span>
+                                </div>
+                                ${isPast ? `<div class="winner">Winner: ${race.winner}</div>` : ''}
+                            </div>
+                        </div>`;
+                });
+                html += `</div>`;
+
+                // Add Standings
+                const standings = racingStandings[title] || [];
+                if (standings.length > 0) {
+                    html += `<div class="mt-4"><div class="text-sm font-medium text-gray-400 mb-2">Current Standings</div>`;
+                    standings.forEach(driver => {
+                        html += `
+                            <div class="flex justify-between text-sm py-1 border-t border-gray-800">
+                                <div><span class="font-mono w-6 inline-block">${driver.position}.</span> ${driver.driver}</div>
+                                <div class="font-semibold">${driver.points} pts</div>
+                            </div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                return html;
+            }
+
             if (!data || !data.events || data.events.length === 0) {
-                return `<h2 class="text-xl font-bold mb-4 flex items-center gap-2 mt-6"><span class="text-orange-500">${getEmoji(title)}</span> ${title}</h2><p class="text-gray-400 text-sm">No events currently available.</p>`;
+                return html + `<p class="text-gray-400 text-sm">No events currently available.</p>`;
             }
 
-            let filteredEvents = data.events;
-            if (sportFilter === 'cfb' || sportFilter === 'cbb') {
-                filteredEvents = data.events.filter(e => shouldShowGame(e, sportFilter));
+            let events = data.events;
+
+            if (showOnlyFavorites) {
+                events = events.filter(e => {
+                    const comp = e.competitions?.[0];
+                    return comp?.competitors?.some(c => isFavorite(c.team?.abbreviation));
+                });
             }
+
+            if (isCollege && !showOnlyFavorites) {
+                events = events.filter(e => shouldShowCollegeGame(e));
+            }
+
+            if (events.length === 0) {
+                return html + `<p class="text-gray-400 text-sm">No matching games.</p>`;
+            }
+
+            events.sort((a, b) => {
+                const aHasFav = a.competitions?.[0]?.competitors?.some(c => isFavorite(c.team?.abbreviation));
+                const bHasFav = b.competitions?.[0]?.competitors?.some(c => isFavorite(c.team?.abbreviation));
+
+                if (aHasFav && !bHasFav) return -1;
+                if (!aHasFav && bHasFav) return 1;
+
+                const aStatus = a.competitions?.[0]?.status?.type?.shortDetail || '';
+                const bStatus = b.competitions?.[0]?.status?.type?.shortDetail || '';
+                return getStatusPriority(aStatus) - getStatusPriority(bStatus);
+            });
 
             let cards = '';
-            filteredEvents.forEach(event => {
+            events.forEach(event => {
                 const comp = event.competitions?.[0];
                 const competitors = comp?.competitors || [];
                 let status = comp?.status?.type?.shortDetail || 'TBD';
 
-                const isRacing = title.toLowerCase().includes('nascar') || title.includes('IndyCar') || title.includes('IMSA') || title.includes('F1');
+                const home = competitors.find(c => c.homeAway === 'home');
+                const away = competitors.find(c => c.homeAway === 'away');
+                const awayAbbr = away?.team?.abbreviation || '---';
+                const homeAbbr = home?.team?.abbreviation || '---';
+                const awayScore = parseInt(away?.score || 0);
+                const homeScore = parseInt(home?.score || 0);
 
-                let cardHTML = `<div class="score-card bg-gray-900 rounded-2xl mb-4 ${isRacing ? 'p-5' : 'team-card'}">`;
+                const awayRecord = getRecord(away?.team);
+                const homeRecord = getRecord(home?.team);
 
-                if (isRacing) {
-                    const flagClass = getFlagColor(status);
-                    cardHTML += `
-                        <div class="flex justify-between items-center mb-3">
-                            <div class="text-sm font-medium">${event.name || 'Race'}</div>
-                            <div class="text-xs ${flagClass} font-medium">${status}</div>
-                        </div>`;
+                const awayLogo = getLogo(away?.team);
+                const homeLogo = getLogo(home?.team);
 
-                    competitors.forEach((c) => {
-                        const name = c.team?.displayName || c.athlete?.displayName || 'Driver';
-                        const number = c.athlete?.displayName?.match(/\d+/)?.[0] || c.number || '??';
-                        const lastLap = c.lastLapTime || '-';
-                        const gap = c.gapToLeader || '-';
+                const awayStar = isFavorite(awayAbbr) ? '⭐' : '☆';
+                const homeStar = isFavorite(homeAbbr) ? '⭐' : '☆';
 
-                        cardHTML += `
-                            <div class="flex justify-between items-center py-2.5 text-sm border-t border-gray-800 first:border-0">
-                                <div class="flex items-center gap-4 flex-1">
-                                    <span class="font-mono text-orange-400 w-7 font-bold">#${number}</span>
-                                    <span class="truncate">${name}</span>
-                                </div>
-                                <div class="text-right text-xs text-gray-400">
-                                    ${lastLap !== '-' ? `Lap: ${lastLap}<br>` : ''}
-                                    ${gap !== '-' ? `+${gap}` : ''}
-                                </div>
-                                <span class="font-semibold w-12 text-right">${c.score || c.position || '-'}</span>
-                            </div>`;
-                    });
-                } else {
-                    const home = competitors.find(c => c.homeAway === 'home');
-                    const away = competitors.find(c => c.homeAway === 'away');
-                    const awayAbbr = away?.team?.abbreviation || '---';
-                    const homeAbbr = home?.team?.abbreviation || '---';
-                    const awayScore = parseInt(away?.score || 0);
-                    const homeScore = parseInt(home?.score || 0);
+                const gameKey = event.id;
+                const currentScore = `${awayScore}-${homeScore}`;
+                let flashClass = '';
+                if (previousScores[gameKey] && previousScores[gameKey] !== currentScore) {
+                    flashClass = 'score-flash';
+                }
+                previousScores[gameKey] = currentScore;
 
-                    const awayIsLeading = awayScore > homeScore;
-                    const homeIsLeading = homeScore > awayScore;
+                let extraInfo = '';
 
-                    const awayLogo = getLogo(away?.team);
-                    const homeLogo = getLogo(home?.team);
-
-                    cardHTML += `
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-2 flex-1 ${awayIsLeading ? 'leading' : ''}">
-                                ${awayLogo ? `<img src="${awayLogo}" class="team-logo" onerror="this.style.display='none'">` : ''}
-                                <div class="font-medium text-xs">${awayAbbr}</div>
-                            </div>
-                            <div class="text-center px-3">
-                                <div class="text-lg font-bold">${awayScore} - ${homeScore}</div>
-                                <div class="text-[9px] text-gray-400">${status}</div>
-                                ${getOdds(comp)}
-                            </div>
-                            <div class="flex items-center gap-2 flex-1 justify-end ${homeIsLeading ? 'leading' : ''}">
-                                <div class="font-medium text-xs">${homeAbbr}</div>
-                                ${homeLogo ? `<img src="${homeLogo}" class="team-logo" onerror="this.style.display='none'">` : ''}
-                            </div>
+                if (isFootball && comp.situation) {
+                    const sit = comp.situation;
+                    extraInfo = `
+                        <div class="text-xs text-gray-400 mt-1">
+                            ${sit.down && sit.distance ? `${sit.down} & ${sit.distance}` : ''}
+                            ${sit.yardLine ? ` • ${sit.yardLine}` : ''}
+                            ${sit.possession ? ` • Poss: ${sit.possession}` : ''}
                         </div>`;
                 }
-                cardHTML += `</div>`;
-                cards += cardHTML;
+
+                if ((isMLB || isSoftball) && comp.situation) {
+                    const sit = comp.situation;
+                    const inning = sit.inning || sit.period || '';
+                    const isTop = sit.isTopInning !== undefined ? (sit.isTopInning ? 'Top' : 'Bot') : '';
+                    const balls = sit.balls !== undefined ? sit.balls : '';
+                    const strikes = sit.strikes !== undefined ? sit.strikes : '';
+                    const outs = sit.outs !== undefined ? sit.outs : '';
+
+                    extraInfo = `
+                        <div class="text-xs text-gray-400 mt-1">
+                            ${inning ? `${isTop} ${inning}` : ''}
+                            ${balls !== '' && strikes !== '' ? ` • ${balls}-${strikes}` : ''}
+                            ${outs !== '' ? ` • ${outs} out${outs != 1 ? 's' : ''}` : ''}
+                        </div>`;
+                }
+
+                cards += `
+                    <div class="score-card bg-gray-900 rounded-2xl mb-3 team-card ${flashClass}">
+                        <div class="flex justify-between items-center">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    ${awayLogo ? `<img src="${awayLogo}" class="team-logo" onerror="this.style.display='none'">` : ''}
+                                    <div>
+                                        <div class="font-medium">${awayAbbr}</div>
+                                        <div class="text-[10px] text-gray-400">${awayRecord}</div>
+                                    </div>
+                                </div>
+                                <span onclick="event.stopImmediatePropagation(); toggleFavorite('${awayAbbr}')" class="star text-yellow-400">${awayStar}</span>
+                            </div>
+
+                            <div class="text-center px-3">
+                                <div class="font-bold">${awayScore} - ${homeScore}</div>
+                                <div class="text-[10px] text-gray-400">${status}</div>
+                                ${extraInfo}
+                            </div>
+
+                            <div class="flex-1 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <div>
+                                        <div class="font-medium">${homeAbbr}</div>
+                                        <div class="text-[10px] text-gray-400">${homeRecord}</div>
+                                    </div>
+                                    ${homeLogo ? `<img src="${homeLogo}" class="team-logo" onerror="this.style.display='none'">` : ''}
+                                </div>
+                                <span onclick="event.stopImmediatePropagation(); toggleFavorite('${homeAbbr}')" class="star text-yellow-400">${homeStar}</span>
+                            </div>
+                        </div>
+                    </div>`;
             });
 
-            const isRacing = title.toLowerCase().includes('nascar') || title.includes('IndyCar') || title.includes('IMSA') || title.includes('F1');
             const gridCols = isRacing ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 sm:grid-cols-2 gap-3';
-
-            return `
-                <h2 class="text-xl font-bold mb-4 flex items-center gap-2 mt-6">
-                    <span class="text-orange-500">${getEmoji(title)}</span> ${title}
-                </h2>
-                <div class="${gridCols}">${cards}</div>
-            `;
+            return html + `<div class="${gridCols}">${cards}</div>`;
         }
 
         function getLogo(team) {
@@ -205,43 +445,17 @@
             return team.logo || team.logos?.[0]?.href || '';
         }
 
-        function getOdds(comp) {
-            if (!comp?.odds?.[0]) return '';
-            const odd = comp.odds[0];
-            let text = odd.details ? `<span>${odd.details}</span>` : '';
-            if (odd.overUnder) text += ` O/U ${odd.overUnder}`;
-            return text ? `<div class="text-[10px] text-emerald-400 mt-1">${text}</div>` : '';
-        }
-
         function getEmoji(title) {
             if (title.includes('NFL') || title.includes('CFB')) return '🏈';
             if (title.includes('NBA') || title.includes('CBB')) return '🏀';
-            if (title.includes('MLB')) return '⚾';
+            if (title.includes('MLB') || title.includes('Softball')) return '⚾';
             if (title.includes('NHL')) return '🏒';
-            if (title.includes('NASCAR') || title.includes('IndyCar') || title.includes('IMSA') || title.includes('F1')) return '🏎️';
+            if (title.includes('NASCAR') || title.includes('IndyCar') || title.includes('F1')) return '🏎️';
             return '🏆';
         }
 
-        function isBigTen(team) {
-            const bigTen = ['ILL','IND','IOW','MICH','MSU','MINN','NEB','NW','OSU','PSU','PUR','RUT','WIS','USC','UCLA','ORE','WASH'];
-            return bigTen.includes(team?.abbreviation?.toUpperCase());
-        }
-
-        function isTop25(team) {
-            return team?.rank && team.rank <= 25;
-        }
-
-        function shouldShowGame(event, sport) {
-            if (sport !== 'cfb' && sport !== 'cbb') return true;
-            const comp = event.competitions?.[0];
-            const competitors = comp?.competitors || [];
-            for (let c of competitors) {
-                if (isTop25(c.team) || isBigTen(c.team)) return true;
-            }
-            return false;
-        }
-
         async function refreshData() {
+            document.getElementById('last-updated').textContent = 'Updating...';
             const activeTab = document.querySelector('.sport-tab.active');
             let sport = 'all';
             if (activeTab) {
@@ -250,6 +464,7 @@
             }
             const data = await fetchScores(sport);
             renderScores(data, sport);
+            document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
         }
 
         function renderScores(data, sport = 'all') {
@@ -257,33 +472,38 @@
             container.innerHTML = '';
 
             let html = '';
-            if (sport === 'all' && data.nfl) {
-                html += createSection('NFL', data.nfl);
-                html += createSection('College Football', data.cfb, 'cfb');
-                html += createSection('NBA', data.nba);
-                html += createSection('College Basketball', data.cbb, 'cbb');
-                html += createSection('MLB', data.mlb);
-                html += createSection('NHL', data.nhl);
-                html += createSection('NASCAR Cup', data.nascar);
-                html += createSection('NASCAR Xfinity', data.xfinity);
-                html += createSection('NASCAR Truck', data.truck);
-                html += createSection('IndyCar', data.indycar);
-                html += createSection('IMSA', data.imsa);
-                html += createSection('F1', data.f1);
-            } else if (sport === 'cfb') html += createSection('College Football', data, 'cfb');
-            else if (sport === 'cbb') html += createSection('College Basketball', data, 'cbb');
-            else if (sport === 'nfl') html += createSection('NFL', data);
-            else if (sport === 'nba') html += createSection('NBA', data);
-            else if (sport === 'mlb') html += createSection('MLB', data);
-            else if (sport === 'nhl') html += createSection('NHL', data);
-            else if (sport === 'nascar') html += createSection('NASCAR Cup', data);
-            else if (sport === 'xfinity') html += createSection('NASCAR Xfinity', data);
-            else if (sport === 'truck') html += createSection('NASCAR Truck', data);
-            else if (sport === 'indycar') html += createSection('IndyCar', data);
-            else if (sport === 'imsa') html += createSection('IMSA', data);
-            else if (sport === 'f1') html += createSection('F1', data);
 
-            container.innerHTML = html || '<p class="text-gray-400">No data available</p>';
+            if (sport === 'all') {
+                if (data.nfl) html += createSection('NFL', data.nfl, { showOnlyFavorites: true });
+                if (data.cfb) html += createSection('College Football', data.cfb, { showOnlyFavorites: true });
+                if (data.nba) html += createSection('NBA', data.nba, { showOnlyFavorites: true });
+                if (data.cbb) html += createSection('College Basketball', data.cbb, { showOnlyFavorites: true });
+                if (data.mlb) html += createSection('MLB', data.mlb, { showOnlyFavorites: true });
+                if (data.softball) html += createSection('Softball', data.softball, { showOnlyFavorites: true });
+                if (data.nhl) html += createSection('NHL', data.nhl, { showOnlyFavorites: true });
+
+                html += createSection('NASCAR Cup', null, { showOnlyNextRace: true });
+                html += createSection('NASCAR Xfinity', null, { showOnlyNextRace: true });
+                html += createSection('NASCAR Truck', null, { showOnlyNextRace: true });
+                html += createSection('IndyCar', null, { showOnlyNextRace: true });
+                html += createSection('F1', null, { showOnlyNextRace: true });
+
+            } else {
+                if (sport === 'nfl') html += createSection('NFL', data);
+                else if (sport === 'cfb') html += createSection('College Football', data);
+                else if (sport === 'nba') html += createSection('NBA', data);
+                else if (sport === 'cbb') html += createSection('College Basketball', data);
+                else if (sport === 'mlb') html += createSection('MLB', data);
+                else if (sport === 'softball') html += createSection('Softball', data);
+                else if (sport === 'nhl') html += createSection('NHL', data);
+                else if (sport === 'nascar') html += createSection('NASCAR Cup', data);
+                else if (sport === 'xfinity') html += createSection('NASCAR Xfinity', data);
+                else if (sport === 'truck') html += createSection('NASCAR Truck', data);
+                else if (sport === 'indycar') html += createSection('IndyCar', data);
+                else if (sport === 'f1') html += createSection('F1', data);
+            }
+
+            container.innerHTML = html || '<p class="text-gray-400">No data available.</p>';
         }
 
         function showSport(sport) {
