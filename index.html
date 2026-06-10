@@ -10,9 +10,9 @@
         body { font-family: 'Segoe UI', system-ui, sans-serif; }
         .score-card { transition: all 0.2s ease; }
         .score-card:hover { transform: translateY(-2px); }
-        .team-card { padding: 10px 12px; font-size: 0.875rem; }
+        .team-card { padding: 14px 16px; font-size: 0.875rem; }
         .leading { color: #f97316; font-weight: 700; }
-        .team-logo { width: 20px; height: 20px; object-fit: contain; }
+        .team-logo { width: 22px; height: 22px; object-fit: contain; }
         .star { cursor: pointer; transition: transform 0.2s; font-size: 1rem; }
         .star:hover { transform: scale(1.3); }
         .favorite-game { border-left: 4px solid #f97316; }
@@ -27,7 +27,7 @@
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen pb-8">
-    <div class="max-w-2xl mx-auto px-4">
+    <div class="max-w-[1600px] mx-auto px-6">
         <header class="py-6 flex items-center justify-between border-b border-gray-800">
             <div class="flex items-center gap-3">
                 <i class="fa-solid fa-trophy text-3xl text-orange-500"></i>
@@ -44,7 +44,6 @@
             </div>
         </header>
 
-        <!-- Tabs -->
         <div class="flex gap-2 mt-6 overflow-x-auto pb-4 flex-wrap">
             <button onclick="showSport('all')" class="sport-tab active px-4 py-2.5 rounded-2xl font-medium bg-orange-500 text-black text-sm">All</button>
             <button onclick="showSport('nfl')" class="sport-tab px-4 py-2.5 rounded-2xl font-medium hover:bg-gray-800 text-sm">NFL</button>
@@ -82,6 +81,7 @@
             return favorites.includes(abbreviation);
         }
 
+        // ==================== RACING DATA ====================
         const racingSchedules = {
             'NASCAR Cup': [
                 { date: "Sun, Feb 15", time: "2:30 PM ET", event: "DAYTONA 500", track: "Daytona International Speedway", tv: "FOX", winner: "Tyler Reddick" },
@@ -131,44 +131,119 @@
             ]
         };
 
-        // Current Standings (as of June 2026)
         const racingStandings = {
             'NASCAR Cup': [
                 { position: 1, driver: "Tyler Reddick", points: 2450 },
                 { position: 2, driver: "Denny Hamlin", points: 2380 },
                 { position: 3, driver: "Kyle Larson", points: 2310 },
                 { position: 4, driver: "Christopher Bell", points: 2250 },
-                { position: 5, driver: "Chase Elliott", points: 2180 }
+                { position: 5, driver: "Chase Elliott", points: 2180 },
+                { position: 6, driver: "Ryan Blaney", points: 2120 },
+                { position: 7, driver: "Joey Logano", points: 2050 },
+                { position: 8, driver: "Martin Truex Jr.", points: 1990 },
+                { position: 9, driver: "Kevin Harvick", points: 1930 },
+                { position: 10, driver: "Brad Keselowski", points: 1870 },
+                { position: 11, driver: "Kyle Busch", points: 1810 },
+                { position: 12, driver: "William Byron", points: 1760 },
+                { position: 13, driver: "Ross Chastain", points: 1710 },
+                { position: 14, driver: "Alex Bowman", points: 1660 },
+                { position: 15, driver: "Austin Dillon", points: 1610 },
+                { position: 16, driver: "Daniel Suárez", points: 1560 },
+                { position: 17, driver: "Bubba Wallace", points: 1510 },
+                { position: 18, driver: "Erik Jones", points: 1460 },
+                { position: 19, driver: "Chris Buescher", points: 1410 },
+                { position: 20, driver: "Michael McDowell", points: 1360 }
             ],
             'NASCAR Xfinity': [
                 { position: 1, driver: "Justin Allgaier", points: 1240 },
                 { position: 2, driver: "Austin Hill", points: 1180 },
                 { position: 3, driver: "Sheldon Creed", points: 1120 },
                 { position: 4, driver: "Cole Custer", points: 1050 },
-                { position: 5, driver: "Chandler Smith", points: 980 }
+                { position: 5, driver: "Chandler Smith", points: 980 },
+                { position: 6, driver: "Riley Herbst", points: 920 },
+                { position: 7, driver: "Josh Berry", points: 870 },
+                { position: 8, driver: "Noah Gragson", points: 820 },
+                { position: 9, driver: "Ty Gibbs", points: 780 },
+                { position: 10, driver: "Brandon Jones", points: 740 },
+                { position: 11, driver: "Sam Mayer", points: 700 },
+                { position: 12, driver: "Parker Kligerman", points: 660 },
+                { position: 13, driver: "Jeep Majeski", points: 620 },
+                { position: 14, driver: "Ryan Sieg", points: 580 },
+                { position: 15, driver: "Derek Kraus", points: 540 },
+                { position: 16, driver: "Brett Moffitt", points: 500 },
+                { position: 17, driver: "Matt Mills", points: 460 },
+                { position: 18, driver: "Jade Buford", points: 420 },
+                { position: 19, driver: "Bayley Currey", points: 380 },
+                { position: 20, driver: "Kyle Weatherman", points: 340 }
             ],
             'NASCAR Truck': [
                 { position: 1, driver: "Layne Riggs", points: 680 },
                 { position: 2, driver: "Ty Majeski", points: 640 },
                 { position: 3, driver: "Grant Enfinger", points: 590 },
                 { position: 4, driver: "Corey Heim", points: 550 },
-                { position: 5, driver: "Ben Rhodes", points: 510 }
+                { position: 5, driver: "Ben Rhodes", points: 510 },
+                { position: 6, driver: "Christian Eckes", points: 470 },
+                { position: 7, driver: "Stewart Friesen", points: 430 },
+                { position: 8, driver: "Matt Crafton", points: 390 },
+                { position: 9, driver: "Johnny Sauter", points: 350 },
+                { position: 10, driver: "Austin Hill", points: 310 },
+                { position: 11, driver: "Zane Smith", points: 270 },
+                { position: 12, driver: "Hailie Deegan", points: 230 },
+                { position: 13, driver: "Derek Kraus", points: 200 },
+                { position: 14, driver: "Tanner Gray", points: 170 },
+                { position: 15, driver: "Lawless Alan", points: 140 },
+                { position: 16, driver: "Colby Howard", points: 110 },
+                { position: 17, driver: "Tyler Ankrum", points: 90 },
+                { position: 18, driver: "Jack Wood", points: 70 },
+                { position: 19, driver: "Spencer Boyd", points: 50 },
+                { position: 20, driver: "Timmy Hill", points: 30 }
             ],
             'IndyCar': [
                 { position: 1, driver: "Alex Palou", points: 320 },
                 { position: 2, driver: "Josef Newgarden", points: 285 },
                 { position: 3, driver: "Scott Dixon", points: 260 },
                 { position: 4, driver: "Pato O'Ward", points: 240 },
-                { position: 5, driver: "Will Power", points: 215 }
+                { position: 5, driver: "Will Power", points: 215 },
+                { position: 6, driver: "Colton Herta", points: 195 },
+                { position: 7, driver: "Marcus Ericsson", points: 175 },
+                { position: 8, driver: "Graham Rahal", points: 155 },
+                { position: 9, driver: "Alexander Rossi", points: 140 },
+                { position: 10, driver: "Felix Rosenqvist", points: 125 },
+                { position: 11, driver: "Rinus VeeKay", points: 110 },
+                { position: 12, driver: "Scott McLaughlin", points: 95 },
+                { position: 13, driver: "Simon Pagenaud", points: 80 },
+                { position: 14, driver: "Jack Harvey", points: 65 },
+                { position: 15, driver: "Conor Daly", points: 50 },
+                { position: 16, driver: "Takuma Sato", points: 40 },
+                { position: 17, driver: "Ed Carpenter", points: 30 },
+                { position: 18, driver: "JR Hildebrand", points: 20 },
+                { position: 19, driver: "Sage Karam", points: 15 },
+                { position: 20, driver: "Dalton Kellett", points: 10 }
             ],
             'F1': [
                 { position: 1, driver: "Max Verstappen", points: 245 },
                 { position: 2, driver: "Lando Norris", points: 199 },
                 { position: 3, driver: "Lewis Hamilton", points: 162 },
                 { position: 4, driver: "Charles Leclerc", points: 154 },
-                { position: 5, driver: "Oscar Piastri", points: 124 }
+                { position: 5, driver: "Oscar Piastri", points: 124 },
+                { position: 6, driver: "Carlos Sainz", points: 108 },
+                { position: 7, driver: "George Russell", points: 92 },
+                { position: 8, driver: "Fernando Alonso", points: 78 },
+                { position: 9, driver: "Sergio Pérez", points: 65 },
+                { position: 10, driver: "Lance Stroll", points: 52 },
+                { position: 11, driver: "Esteban Ocon", points: 42 },
+                { position: 12, driver: "Pierre Gasly", points: 35 },
+                { position: 13, driver: "Yuki Tsunoda", points: 28 },
+                { position: 14, driver: "Valtteri Bottas", points: 22 },
+                { position: 15, driver: "Zhou Guanyu", points: 17 },
+                { position: 16, driver: "Kevin Magnussen", points: 13 },
+                { position: 17, driver: "Nico Hülkenberg", points: 10 },
+                { position: 18, driver: "Daniel Ricciardo", points: 7 },
+                { position: 19, driver: "Logan Sargeant", points: 4 },
+                { position: 20, driver: "Alexander Albon", points: 2 }
             ]
         };
+        // ==================== END RACING DATA ====================
 
         function getNextRace(schedule) {
             for (let race of schedule) {
@@ -179,11 +254,19 @@
 
         function getRecord(team) {
             if (!team) return '';
-            if (team.record && team.record.wins !== undefined) {
-                return `${team.record.wins}-${team.record.losses}`;
+            if (Array.isArray(team.records) && team.records.length > 0) {
+                for (let r of team.records) {
+                    if (r.summary) return r.summary;
+                    if (r.record) return r.record;
+                    if (r.wins !== undefined && r.losses !== undefined) return `${r.wins}-${r.losses}`;
+                }
             }
-            if (team.records && team.records[0] && team.records[0].summary) {
-                return team.records[0].summary;
+            if (team.record) {
+                if (typeof team.record === 'string') return team.record;
+                if (team.record.summary) return team.record.summary;
+                if (team.record.wins !== undefined && team.record.losses !== undefined) {
+                    return `${team.record.wins}-${team.record.losses}`;
+                }
             }
             return '';
         }
@@ -220,17 +303,26 @@
             const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
 
             if (sport === 'all') {
-                const [nfl, cfb, nba, cbb, mlb, softball, nhl, nascar] = await Promise.all([
-                    fetch(base + 'football/nfl/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'football/college-football/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'basketball/nba/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'basketball/mens-college-basketball/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(`${base}baseball/mlb/scoreboard?dates=${today}`).then(r => r.json().catch(() => ({}))),
+                const results = await Promise.allSettled([
+                    fetch(base + 'football/nfl/scoreboard').then(r => r.json()),
+                    fetch(base + 'football/college-football/scoreboard').then(r => r.json()),
+                    fetch(base + 'basketball/nba/scoreboard').then(r => r.json()),
+                    fetch(base + 'basketball/mens-college-basketball/scoreboard').then(r => r.json()),
+                    fetch(`${base}baseball/mlb/scoreboard?dates=${today}`).then(r => r.json()),
                     fetch(base + 'softball/college-softball/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'hockey/nhl/scoreboard').then(r => r.json().catch(() => ({}))),
-                    fetch(base + 'racing/nascar-premier/scoreboard').then(r => r.json().catch(() => ({})))
+                    fetch(base + 'hockey/nhl/scoreboard').then(r => r.json()),
+                    fetch(base + 'racing/nascar-premier/scoreboard').then(r => r.json())
                 ]);
-                return { nfl, cfb, nba, cbb, mlb, softball, nhl, nascar };
+                return {
+                    nfl: results[0].value || {},
+                    cfb: results[1].value || {},
+                    nba: results[2].value || {},
+                    cbb: results[3].value || {},
+                    mlb: results[4].value || {},
+                    softball: results[5].value || {},
+                    nhl: results[6].value || {},
+                    nascar: results[7].value || {}
+                };
             }
 
             try {
@@ -240,7 +332,7 @@
                 if (sport === 'nfl') return await fetch(base + 'football/nfl/scoreboard').then(r => r.json());
                 if (sport === 'cfb') return await fetch(base + 'football/college-football/scoreboard').then(r => r.json());
                 if (sport === 'cbb') return await fetch(base + 'basketball/mens-college-basketball/scoreboard').then(r => r.json());
-                if (sport === 'softball') return await fetch(base + 'softball/college-softball/scoreboard').then(r => r.json());
+                if (sport === 'softball') return await fetch(base + 'softball/college-softball/scoreboard').then(r => r.json().catch(() => ({})));
                 if (sport === 'nascar') return await fetch(base + 'racing/nascar-premier/scoreboard').then(r => r.json());
                 if (sport === 'xfinity') return await fetch(base + 'racing/nascar-secondary/scoreboard').then(r => r.json());
                 if (sport === 'truck') return await fetch(base + 'racing/nascar-truck/scoreboard').then(r => r.json());
@@ -294,10 +386,9 @@
                 });
                 html += `</div>`;
 
-                // Add Standings
                 const standings = racingStandings[title] || [];
                 if (standings.length > 0) {
-                    html += `<div class="mt-4"><div class="text-sm font-medium text-gray-400 mb-2">Current Standings</div>`;
+                    html += `<div class="mt-4"><div class="text-sm font-medium text-gray-400 mb-2">Current Standings (Top 20)</div>`;
                     standings.forEach(driver => {
                         html += `
                             <div class="flex justify-between text-sm py-1 border-t border-gray-800">
@@ -307,7 +398,6 @@
                     });
                     html += `</div>`;
                 }
-
                 return html;
             }
 
@@ -329,7 +419,7 @@
             }
 
             if (events.length === 0) {
-                return html + `<p class="text-gray-400 text-sm">No matching games.</p>`;
+                return html + `<p class="text-gray-400 text-sm">No matching games (favorite some teams first).</p>`;
             }
 
             events.sort((a, b) => {
@@ -359,6 +449,10 @@
 
                 const awayRecord = getRecord(away?.team);
                 const homeRecord = getRecord(home?.team);
+
+                if (isMLB) {
+                    console.log('MLB Team data:', away?.team);
+                }
 
                 const awayLogo = getLogo(away?.team);
                 const homeLogo = getLogo(home?.team);
@@ -410,7 +504,7 @@
                                     ${awayLogo ? `<img src="${awayLogo}" class="team-logo" onerror="this.style.display='none'">` : ''}
                                     <div>
                                         <div class="font-medium">${awayAbbr}</div>
-                                        <div class="text-[10px] text-gray-400">${awayRecord}</div>
+                                        <div class="text-xs text-white">${awayRecord}</div>
                                     </div>
                                 </div>
                                 <span onclick="event.stopImmediatePropagation(); toggleFavorite('${awayAbbr}')" class="star text-yellow-400">${awayStar}</span>
@@ -426,7 +520,7 @@
                                 <div class="flex items-center justify-end gap-2">
                                     <div>
                                         <div class="font-medium">${homeAbbr}</div>
-                                        <div class="text-[10px] text-gray-400">${homeRecord}</div>
+                                        <div class="text-xs text-white">${homeRecord}</div>
                                     </div>
                                     ${homeLogo ? `<img src="${homeLogo}" class="team-logo" onerror="this.style.display='none'">` : ''}
                                 </div>
@@ -436,7 +530,7 @@
                     </div>`;
             });
 
-            const gridCols = isRacing ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+            const gridCols = isRacing ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-6 gap-4';
             return html + `<div class="${gridCols}">${cards}</div>`;
         }
 
